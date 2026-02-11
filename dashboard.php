@@ -15,16 +15,51 @@ if(!isset($_SESSION['user'])){
 </head>
 <body>
 
-<div class="dashboard">
-    <h2>Welcome to Dashboard</h2>
+<div class="dashboard-wrapper">
 
-    <div class="user-info">
-        <p><strong>Name:</strong> <?php echo $_SESSION['user'][0]; ?></p>
-        <p><strong>Email:</strong> <?php echo $_SESSION['user'][1]; ?></p>
-        <p><strong>Phone:</strong> <?php echo $_SESSION['user'][2]; ?></p>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div>
+            <h3>My Panel</h3>
+            <div class="nav-links">
+                <a href="dashboard.php?page=home" class="<?= $page == 'home' ? 'active' : '' ?>">Home</a>
+                <a href="dashboard.php?page=profile" class="<?= $page == 'profile' ? 'active' : '' ?>">Profile</a>
+                <a href="dashboard.php?page=users" class="<?= $page == 'users' ? 'active' : '' ?>">Users</a>
+            </div>
+        </div>
     </div>
 
-    <a href="logout.php" class="logout-btn">Logout</a>
+    <!-- Main Content -->
+    <div class="dashboard-content">
+
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h2>Welcome, <?php echo $_SESSION['user'][0]; ?></h2>
+            <a href="logout.php" class="logout-btn">Logout</a>
+        </div>
+
+        <!-- Cards Section -->
+        <div class="card-grid">
+
+            <div class="dashboard-card">
+                <h4>Full Name</h4>
+                <p><?php echo $_SESSION['user'][0]; ?></p>
+            </div>
+
+            <div class="dashboard-card">
+                <h4>Email Address</h4>
+                <p><?php echo $_SESSION['user'][1]; ?></p>
+            </div>
+
+            <div class="dashboard-card">
+                <h4>Phone Number</h4>
+                <p><?php echo $_SESSION['user'][2]; ?></p>
+            </div>
+
+        </div>
+
+    </div>
+
 </div>
 
 </body>

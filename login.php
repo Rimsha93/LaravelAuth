@@ -38,11 +38,16 @@ if(isset($_POST['login'])){
 
 </head>
 <body>
-    <form method="post">
-    Email: <input type="email" name="email"><br>
-    Password: <input type="password" name="password"><br>
-    <button name="login">Login</button><br><br>
-    <p>Don't have an account? <a href="signup.php">Signup here</a></p>
+    <div class="auth-wrapper">
+        <h2 class="auth-title">Login</h2>
+        <form method="post">
+            Email: <input type="email" name="email"><br>
+            Password: <input type="password" name="password"><br>
+            <button name="login">Login</button><br><br>
+        <div class="auth-footer">
+            Don’t have an account? <a href="#">Signup</a>
+        </div>
+    </div>
 </form>
 </body>
 </html>
