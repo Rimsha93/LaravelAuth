@@ -120,7 +120,7 @@ if(isset($_POST['update_user'])){
                 $users = file("users.txt");
 
                 foreach($users as $user){
-                    $data = explode("-", trim($user));
+                    $data = explode("_", trim($user));
                     if($data[1] == $editEmail){
                         $editName = $data[0];
                         $editPhone = $data[2];
