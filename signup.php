@@ -103,7 +103,7 @@ if(isset($_POST['signup'])){
             <input type="password" name="password" class="form-control" required>
         </div>
 
-        <button type="submit" name="signup" class="auth-btn">Signup</button>
+        <button type="submit" name="signup" class="auth-btn">Signup</button><br><br>
 
     </form>
 

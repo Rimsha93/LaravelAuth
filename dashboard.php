@@ -7,8 +7,55 @@ if(!isset($_SESSION['user'])){
 }
 
 $page = isset($_GET['page']) ? $_GET['page'] : 'home';
+$currentEmail = $_SESSION['user'][1];
 
-/*  DELETE LOGIC */
+/* ALWAYS REFRESH THE USER DATA FROM FILE  */
+$users = file("users.txt");
+foreach($users as $user){
+    $data = explode("-", trim($user));
+    if($data[1] == $currentEmail){
+        $_SESSION['user'] = $data; // refresh session
+        break;
+    }
+}
+
+
+/*  PROFILE IMAGE UPLOAD  */
+if(isset($_POST['upload_pic'])){
+
+    if(isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] == 0){
+
+        $file = $_FILES['profile_pic'];
+        $allowed = ['jpg','jpeg','png'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+        if(in_array($ext, $allowed) && $file['size'] < 2000000){
+
+            $newImageName = time() . "_" . $currentEmail . "." . $ext;
+            move_uploaded_file($file['tmp_name'], "uploads/" . $newImageName);
+
+            $users = file("users.txt");
+            $fileWrite = fopen("users.txt", "w");
+
+            foreach($users as $user){
+                $data = explode("-", trim($user));
+
+                if($data[1] == $currentEmail){
+                    $data[4] = $newImageName;
+                    $_SESSION['user'][4] = $newImageName;
+                }
+
+                fwrite($fileWrite, implode("-", $data) . "\n");
+            }
+
+            fclose($fileWrite);
+            header("Location: dashboard.php?page=profile");
+            exit;
+        }
+    }
+}
+
+/*  DELETE USER  */
 if(isset($_GET['delete'])){
     $deleteEmail = $_GET['delete'];
     $users = file("users.txt");
@@ -26,7 +73,7 @@ if(isset($_GET['delete'])){
     exit;
 }
 
-/* UPDATE LOGIC  */
+/* UPDATE USER  */
 if(isset($_POST['update_user'])){
     $email = $_POST['email'];
     $newName = $_POST['name'];
@@ -38,9 +85,12 @@ if(isset($_POST['update_user'])){
 
     foreach($users as $user){
         $data = explode("-", trim($user));
+
         if($data[1] == $email){
-            $user = "$newName-$email-$newPhone-$newPassword\n";
+            $image = isset($data[4]) ? $data[4] : "default.png";
+            $user = "$newName-$email-$newPhone-$newPassword-$image\n";
         }
+
         fwrite($file, $user);
     }
 
@@ -48,6 +98,8 @@ if(isset($_POST['update_user'])){
     header("Location: dashboard.php?page=users");
     exit;
 }
+
+$userImage = (!empty($_SESSION['user'][4])) ? $_SESSION['user'][4] : "default.png";
 ?>
 
 <!DOCTYPE html>
@@ -77,20 +129,50 @@ if(isset($_POST['update_user'])){
 
         <div class="dashboard-header">
             <h2>Welcome, <?= $_SESSION['user'][0]; ?></h2>
-            <a href="logout.php" class="logout-btn">Logout</a>
-        </div>
+            
+                <!-- User Dropdown -->
+                <div class="user-dropdown" onclick="toggleDropdown(event)">
+                    <div class="user-info">
+                        <span><?= $_SESSION['user'][0]; ?></span>
+                        <img src="uploads/<?= $userImage; ?>" alt="Profile">
+                    </div>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="dashboard.php?page=profile">Profile</a>
+                        <a href="logout.php">Logout</a>
+                    </div>
+                </div>
+            </div>
+
 
         <!-- HOME -->
         <?php if($page == 'home'): ?>
 
             <div class="dashboard-card">
-                <h4>Hello 👋</h4>
+                <h4>Hello</h4>
                 <p>Welcome back, <strong><?= $_SESSION['user'][0]; ?></strong></p>
             </div>
 
         <!-- PROFILE -->
         <?php elseif($page == 'profile'): ?>
 
+            <div class="profile-section">
+
+                <form method="POST" enctype="multipart/form-data">
+                    <label for="profile_pic">
+                        <img src="uploads/<?= $userImage; ?>" class="profile-pic" id="previewImg">
+                    </label>
+
+                    <input type="file" name="profile_pic" id="profile_pic"
+                           class="hidden-input" accept="image/*"
+                           onchange="previewImage(event)" required>
+
+                    <br>
+                    <button type="submit" name="upload_pic" class="upload-btn">
+                        Update Profile Picture
+                    </button>
+                </form>
+            </div>
+            
             <div class="card-grid">
 
                 <div class="dashboard-card">
@@ -114,13 +196,12 @@ if(isset($_POST['update_user'])){
         <?php elseif($page == 'users'): ?>
 
             <?php
-            /* EDIT MODE CHECK */
             if(isset($_GET['edit'])){
                 $editEmail = $_GET['edit'];
                 $users = file("users.txt");
 
                 foreach($users as $user){
-                    $data = explode("_", trim($user));
+                    $data = explode("-", trim($user));
                     if($data[1] == $editEmail){
                         $editName = $data[0];
                         $editPhone = $data[2];
@@ -129,24 +210,25 @@ if(isset($_POST['update_user'])){
                 }
             ?>
 
-            <!-- EDIT FORM -->
-            <div class="dashboard-card">
+            <div class="dashboard-card" style="margin-bottom:20px;">
                 <h4>Edit User</h4>
                 <br>
-                <form method="post">
+
+                <form method="POST">
                     <input type="hidden" name="email" value="<?= $editEmail; ?>">
 
                     <input type="text" name="name" value="<?= $editName; ?>" required><br><br>
                     <input type="text" name="phone" value="<?= $editPhone; ?>" required><br><br>
                     <input type="text" name="password" value="<?= $editPassword; ?>" required><br><br>
 
-                    <button type="submit" name="update_user">Update</button>
+                    <button type="submit" name="update_user" class="upload-btn">
+                        Update User
+                    </button>
                 </form>
             </div>
 
             <?php } ?>
 
-            <!-- USERS TABLE -->
             <div class="dashboard-card">
                 <h4>All Users</h4>
                 <br>
@@ -156,6 +238,7 @@ if(isset($_POST['update_user'])){
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
+                        <th>Image</th>
                         <th>Actions</th>
                     </tr>
 
@@ -167,14 +250,18 @@ if(isset($_POST['update_user'])){
                         if(empty($line)) continue;
 
                         $data = explode("-", $line);
+                        $img = isset($data[4]) ? $data[4] : "default.png";
                     ?>
                         <tr>
                             <td><?= $data[0]; ?></td>
                             <td><?= $data[1]; ?></td>
                             <td><?= $data[2]; ?></td>
+                            <td><img src="uploads/<?= $img; ?>" width="40" style="border-radius:50%;"></td>
                             <td>
-                                <a href="dashboard.php?page=users&edit=<?= $data[1]; ?>">Edit</a> |
-                                <a href="dashboard.php?page=users&delete=<?= $data[1]; ?>" onclick="return confirm('Delete this user?')">Delete</a>
+                                <a href="dashboard.php?page=users&edit=<?= $data[1]; ?>" style="color:#00d4ff;">Edit</a> |
+                                <a href="dashboard.php?page=users&delete=<?= $data[1]; ?>" 
+                                   onclick="return confirm('Delete this user?')" 
+                                   style="color:#ff4d4d;">Delete</a>
                             </td>
                         </tr>
                     <?php
@@ -189,6 +276,41 @@ if(isset($_POST['update_user'])){
 
     </div>
 </div>
+
+<script>
+function previewImage(event){
+    const reader = new FileReader();
+    reader.onload = function(){
+        document.getElementById('previewImg').src = reader.result;
+    }
+    reader.readAsDataURL(event.target.files[0]);
+}
+</script>
+<script>
+function previewImage(event){
+    const reader = new FileReader();
+    reader.onload = function(){
+        document.getElementById('previewImg').src = reader.result;
+    }
+    reader.readAsDataURL(event.target.files[0]);
+}
+
+// Toggle user dropdown
+function toggleDropdown(event) {
+    event.stopPropagation();
+    document.getElementById('userDropdown').classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('userDropdown');
+    const userDropdown = document.querySelector('.user-dropdown');
+    
+    if (!userDropdown.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+</script>
 
 </body>
 </html>

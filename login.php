@@ -81,7 +81,7 @@ if(isset($_POST['login'])){
             <input type="password" name="password" class="form-control" required>
         </div>
 
-        <button type="submit" name="login" class="auth-btn">Login</button>
+        <button type="submit" name="login" class="auth-btn">Login</button><br><br>
 
     </form>
 
