@@ -5,6 +5,49 @@ if(!isset($_SESSION['user'])){
     header("Location: login.php");
     exit;
 }
+
+$page = isset($_GET['page']) ? $_GET['page'] : 'home';
+
+/*  DELETE LOGIC */
+if(isset($_GET['delete'])){
+    $deleteEmail = $_GET['delete'];
+    $users = file("users.txt");
+    $file = fopen("users.txt", "w");
+
+    foreach($users as $user){
+        $data = explode("-", trim($user));
+        if($data[1] != $deleteEmail){
+            fwrite($file, $user);
+        }
+    }
+
+    fclose($file);
+    header("Location: dashboard.php?page=users");
+    exit;
+}
+
+/* UPDATE LOGIC  */
+if(isset($_POST['update_user'])){
+    $email = $_POST['email'];
+    $newName = $_POST['name'];
+    $newPhone = $_POST['phone'];
+    $newPassword = $_POST['password'];
+
+    $users = file("users.txt");
+    $file = fopen("users.txt", "w");
+
+    foreach($users as $user){
+        $data = explode("-", trim($user));
+        if($data[1] == $email){
+            $user = "$newName-$email-$newPhone-$newPassword\n";
+        }
+        fwrite($file, $user);
+    }
+
+    fclose($file);
+    header("Location: dashboard.php?page=users");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,34 +75,119 @@ if(!isset($_SESSION['user'])){
     <!-- Main Content -->
     <div class="dashboard-content">
 
-        <!-- Header -->
         <div class="dashboard-header">
-            <h2>Welcome, <?php echo $_SESSION['user'][0]; ?></h2>
+            <h2>Welcome, <?= $_SESSION['user'][0]; ?></h2>
             <a href="logout.php" class="logout-btn">Logout</a>
         </div>
 
-        <!-- Cards Section -->
-        <div class="card-grid">
+        <!-- HOME -->
+        <?php if($page == 'home'): ?>
 
             <div class="dashboard-card">
-                <h4>Full Name</h4>
-                <p><?php echo $_SESSION['user'][0]; ?></p>
+                <h4>Hello 👋</h4>
+                <p>Welcome back, <strong><?= $_SESSION['user'][0]; ?></strong></p>
             </div>
 
+        <!-- PROFILE -->
+        <?php elseif($page == 'profile'): ?>
+
+            <div class="card-grid">
+
+                <div class="dashboard-card">
+                    <h4>Full Name</h4>
+                    <p><?= $_SESSION['user'][0]; ?></p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h4>Email</h4>
+                    <p><?= $_SESSION['user'][1]; ?></p>
+                </div>
+
+                <div class="dashboard-card">
+                    <h4>Phone</h4>
+                    <p><?= $_SESSION['user'][2]; ?></p>
+                </div>
+
+            </div>
+
+        <!-- USERS -->
+        <?php elseif($page == 'users'): ?>
+
+            <?php
+            /* EDIT MODE CHECK */
+            if(isset($_GET['edit'])){
+                $editEmail = $_GET['edit'];
+                $users = file("users.txt");
+
+                foreach($users as $user){
+                    $data = explode("-", trim($user));
+                    if($data[1] == $editEmail){
+                        $editName = $data[0];
+                        $editPhone = $data[2];
+                        $editPassword = $data[3];
+                    }
+                }
+            ?>
+
+            <!-- EDIT FORM -->
             <div class="dashboard-card">
-                <h4>Email Address</h4>
-                <p><?php echo $_SESSION['user'][1]; ?></p>
+                <h4>Edit User</h4>
+                <br>
+                <form method="post">
+                    <input type="hidden" name="email" value="<?= $editEmail; ?>">
+
+                    <input type="text" name="name" value="<?= $editName; ?>" required><br><br>
+                    <input type="text" name="phone" value="<?= $editPhone; ?>" required><br><br>
+                    <input type="text" name="password" value="<?= $editPassword; ?>" required><br><br>
+
+                    <button type="submit" name="update_user">Update</button>
+                </form>
             </div>
 
+            <?php } ?>
+
+            <!-- USERS TABLE -->
             <div class="dashboard-card">
-                <h4>Phone Number</h4>
-                <p><?php echo $_SESSION['user'][2]; ?></p>
+                <h4>All Users</h4>
+                <br>
+
+                <table border="1" width="100%" cellpadding="8">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Actions</th>
+                    </tr>
+
+                    <?php
+                    $file = fopen("users.txt", "r");
+
+                    while(!feof($file)){
+                        $line = trim(fgets($file));
+                        if(empty($line)) continue;
+
+                        $data = explode("-", $line);
+                    ?>
+                        <tr>
+                            <td><?= $data[0]; ?></td>
+                            <td><?= $data[1]; ?></td>
+                            <td><?= $data[2]; ?></td>
+                            <td>
+                                <a href="dashboard.php?page=users&edit=<?= $data[1]; ?>">Edit</a> |
+                                <a href="dashboard.php?page=users&delete=<?= $data[1]; ?>" onclick="return confirm('Delete this user?')">Delete</a>
+                            </td>
+                        </tr>
+                    <?php
+                    }
+
+                    fclose($file);
+                    ?>
+                </table>
             </div>
 
-        </div>
+        <?php endif; ?>
 
     </div>
-
 </div>
 
 </body>

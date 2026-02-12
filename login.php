@@ -1,54 +1,96 @@
 <?php
 session_start();
 
+$error = "";
+
 if(isset($_POST['login'])){
-    $email = $_POST['email'];
-    $password = $_POST['password'];
 
-    $file = fopen("users.txt", "r");
-    $found = false;
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
 
-    while(!feof($file)){
-        $line = fgets($file);
-        $data = explode("-", trim($line));
-
-        if(isset($data[1]) && $data[1] == trim($email) && $data[3] == trim($password)){
-            $_SESSION['user'] = $data;
-            $found = true;
-            break;
-        }
-    }
-
-    fclose($file);
-
-    if($found){
-        header("Location: dashboard.php");
+    if(empty($email) || empty($password)){
+        $error = "Please fill all fields!";
     } else {
-        echo "Invalid email or password!";
+
+        if(file_exists("users.txt")){
+
+            $file = fopen("users.txt", "r");
+            $found = false;
+
+            while(!feof($file)){
+                $line = fgets($file);
+                $data = explode("-", trim($line));
+
+                if(isset($data[1]) && isset($data[3])){
+                    if($data[1] == $email && $data[3] == $password){
+                        $_SESSION['user'] = $data;
+                        $found = true;
+                        break;
+                    }
+                }
+            }
+
+            fclose($file);
+
+            if($found){
+                header("Location: dashboard.php");
+                exit();
+            } else {
+                $error = "Invalid email or password!";
+            }
+
+        } else {
+            $error = "User file not found!";
+        }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Login | Auth System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
 
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <div class="auth-wrapper">
-        <h2 class="auth-title">Login</h2>
-        <form method="post">
-            Email: <input type="email" name="email"><br>
-            Password: <input type="password" name="password"><br>
-            <button name="login">Login</button><br><br>
-        <div class="auth-footer">
-            Don’t have an account? <a href="#">Signup</a>
+
+<div class="auth-wrapper">
+
+    <h2 class="auth-title">Welcome Back!</h2>
+
+    <?php if($error): ?>
+        <div class="error-msg"><?php echo $error; ?></div>
+    <?php endif; ?>
+
+    <form method="post">
+
+        <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" name="email" class="form-control" required>
         </div>
+
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+
+        <button type="submit" name="login" class="auth-btn">Login</button>
+
+    </form>
+
+    <div class="auth-footer">
+        Don’t have an account?
+        <a href="signup.php">Create Account</a>
     </div>
-</form>
+
+</div>
+
 </body>
 </html>
-
