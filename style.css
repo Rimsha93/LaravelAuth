@@ -392,3 +392,6 @@ table a:hover {
 .dropdown-menu.show {
     display: flex;
 }
+.auth-wrapper a{
+    color: #00d4ff;
+}
